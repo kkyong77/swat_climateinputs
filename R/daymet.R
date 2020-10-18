@@ -1,23 +1,26 @@
+#################daymet.R###############################################
 ## daymet R packages
 #install.packages("daymetr")
 # download dayment data based on lat and log
 # reformat the data for SWAT model inputs
 # reading yakima headwater subbasin lat and log
-
+#########################################################################
+# loading related library
 library(daymetr)
 library(chron)
 library(lubridate)
 library(zoo)
 
-getwd()
 
+home<-getwd()
 
+# reading lat and long values
 xyz<-read.delim("C:/Project/Columbia_SWAT/Yakima_SWAT/climate/subbasin_yakima_headwater.txt",header=T,sep=",")
 xy<-xyz[,c("Lat","Long_")]
 
 write.csv(xy,file="yakima_header_site.csv")
 
-
+#downloading the all available variable 
 ya_daymet<-download_daymet_batch("yakima_header_site.csv",
                       start = 1980,
                       end = 2019,
@@ -34,8 +37,10 @@ setwd(dataPath_swat)
 datalist=list()
 
 ###########################################################
-# calculating laps rate of temperature and precipitation
-
+# saving the precipitation, temperature and daily radiation data
+###########################################################
+## writing precipitation as SWAT model input format----
+# location files for precipitation
 for (i in 1:nrow(xyz)){
   tmp1<-xyz[i,]
   nam_pcp <- paste(as.numeric(substr(xyz[i,"HydroID"],4,7)),"pcp", sep = "")
@@ -52,9 +57,8 @@ pcp_loc<-do.call(rbind,datalist)
 
 write.csv(pcp_loc, file="locations_ya_PCP.txt", row.names=FALSE)
 
-## writing precipitation as SWAT model input format----
-
-
+# saving swat daily precipitationd data
+# considering the leap year
 # number of stations (nrow(xyz))
 for (i in 1:nrow(xyz)) { # 
   
@@ -108,8 +112,9 @@ for (i in 1:nrow(xyz)) { #
 
 
 
-
+############################################################
 ## writing tmax and tmin as SWAT model input format----
+# location file for daily tmax and tmin 
 datalist=list()
 
 for (i in 1:nrow(xyz)){
@@ -129,7 +134,7 @@ temp_loc<-do.call(rbind,datalist)
 write.csv(temp_loc, file="locations_ya_temp.txt", row.names=FALSE)
 
 
-
+# saving the daily tmax and tmin time series data for swat 
 for (i in 1:nrow(xyz)){
   tmp<-data.frame(cbind(df[[i]]$data$year,df[[i]]$data$tmax..deg.c.,df[[i]]$data$tmin..deg.c.))
   colnames(tmp)=c("year","tmax","tmin")
@@ -186,10 +191,9 @@ for (i in 1:nrow(xyz)){
 
 ############################################################
 # adding solar radiation data
-# daily solar radiation=daylength*
+# daily solar radiation=daylength*shortwavelength radiation
 #Incident shortwave radiation flux density in watts per square meter, taken as an average over the daylight period of the day.
 #NOTE: Daily total radiation (MJ/m2/day) can be calculated as follows: ((srad (W/m2) * dayl (s/day)) / l,000,000)
-
 
 datalist=list()
 
@@ -263,3 +267,8 @@ for (i in 1:nrow(xyz)){
   write(header,file=paste0(myfile_trad,".txt"))
   write.table(trad[,2], file=paste0(myfile_trad,".txt"), append=T, col.names=F, row.names=F, quote=F)
 }
+###########################################################################################################
+# resetting the directory 
+setwd(home)
+
+
